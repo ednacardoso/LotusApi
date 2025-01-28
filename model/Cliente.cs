@@ -18,6 +18,7 @@ namespace Lotus.Models
         public string Endereco { get; set; } = string.Empty;
         public DateTime DataCadastro { get; set; } = DateTime.UtcNow;
         public DateTime? DataNascimento { get; set; }
+        public string Descricao { get; set; } = string.Empty;
 
         public void SetDataNascimento(DateTime? dataNascimento)
         {

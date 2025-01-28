@@ -16,6 +16,8 @@ namespace Lotus.Models
         public DateTime DataCadastro { get; set; } = DateTime.UtcNow;
         public DateTime? DataNascimento { get; set; }
 
+        public string descricao { get; set; } = string.Empty;
+
         public void SetDataNascimento(DateTime? dataNascimento)
         {
             DataNascimento = dataNascimento?.ToUniversalTime();
