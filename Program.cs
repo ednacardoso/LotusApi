@@ -10,6 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<MLotusContext>(options =>
     options.UseNpgsql("Host=localhost;Database=lotus;Username=postgres;Password=1a2badmin#$#"));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PermitirFrontendLocal", policy =>
+    {
+        policy.WithOrigins("http://localhost:50921") // URL do front-end
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Permitir cookies, se necessário
+    });
+});
+
 // Configuração de serialização JSON
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -60,6 +71,11 @@ app.MapGet("/", context =>
 });
 
 // Mapear controladores
+
+app.UseCors("PermitirFrontendLocal");
+
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
