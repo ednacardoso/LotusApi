@@ -1,47 +1,73 @@
-using System.Text.Json.Serialization;
+ï»¿using System.Text.Json.Serialization;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Lotus.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração do banco de dados
-builder.Services.AddDbContext<MLotusContext>(options =>
-    options.UseNpgsql("Host=localhost;Database=lotus;Username=postgres;Password=1a2badmin#$#"));
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
+// Database configuration
+builder.Services.AddDbContext<MLotusContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// CORS configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("PermitirFrontendLocal", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:50921") // URL do front-end
+        policy.WithOrigins("http://localhost:56172")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Permitir cookies, se necessário
+              .AllowCredentials();
     });
 });
 
-// Configuração de serialização JSON
+// JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? ""))
+        };
+    });
+
+// ðŸ”¹ Adiciona AutorizaÃ§Ã£o
+builder.Services.AddAuthorization();
+
+// JSON Serialization
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
 });
 
-// Adicionar controladores
-builder.Services.AddControllers();
-
-// Configurar Swagger
-builder.Services.AddEndpointsApiExplorer(); // Necessário para endpoints
+// Swagger Configuration
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "API Lotus",
         Version = "v1",
-        Description = "Documentação da API Lotus para gerenciar clientes, funcionários e agendamentos.",
+        Description = "DocumentaÃ§Ã£o da API Lotus para gerenciar clientes, funcionÃ¡rios e agendamentos.",
         Contact = new OpenApiContact
         {
-            Name = "Edna Cardoso Gonçalves",
+            Name = "Edna Cardoso GonÃ§alves",
             Email = "edna.goncalves.peixoto@gmail.com",
             Url = new Uri("https://github.com/ednacardoso")
         }
@@ -50,37 +76,36 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Habilitar Swagger no ambiente de desenvolvimento
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
+    app.UseHttpsRedirection();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "API Lotus v1");
-        options.RoutePrefix = string.Empty; // Deixa o Swagger disponível na raiz (ex: http://localhost:5000)
+        options.RoutePrefix = string.Empty;
     });
 }
-app.UseDefaultFiles(); // Procura por arquivos padrão como index.html
-app.UseStaticFiles();  // Permite servir arquivos estáticos, como HTML, CSS, JS
 
-// Redireciona para index.html se acessar a raiz "/"
+//app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapGet("/", context =>
 {
     context.Response.Redirect("/index.html");
     return Task.CompletedTask;
 });
 
-// Mapear controladores
-
-app.UseCors("PermitirFrontendLocal");
-
+app.UseCors("AllowAll");
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
 
-[JsonSerializable(typeof(Lotus.Models.Todo[]))]
+[JsonSerializable(typeof(Todo[]))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

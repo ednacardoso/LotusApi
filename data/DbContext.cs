@@ -11,9 +11,13 @@ namespace Lotus.Data
 
         public DbSet<Funcionarios> Funcionarios { get; set; }
 
-        public DbSet<Agendamentos> Agendamentos { get; set; }  
+        public DbSet<Agendamentos> Agendamentos { get; set; }
 
+        public DbSet<User> Users { get; set; }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; } 
+
+       
 
     }
 
