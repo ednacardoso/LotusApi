@@ -3,6 +3,7 @@ using System;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace lotus.Migrations
 {
     [DbContext(typeof(MLotusContext))]
-    partial class MLotusContextModelSnapshot : ModelSnapshot
+    [Migration("20250130142735_AddFuncionarioIdToAgendamentos")]
+    partial class AddFuncionarioIdToAgendamentos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,9 +37,6 @@ namespace lotus.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("ClienteId")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("DataAgendamento")
                         .HasColumnType("timestamp with time zone");
 
@@ -44,7 +44,7 @@ namespace lotus.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("FuncionarioId")
+                    b.Property<int?>("FuncionarioId")
                         .HasColumnType("integer");
 
                     b.Property<string>("MotivoCancelamento")

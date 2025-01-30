@@ -3,6 +3,7 @@ using System;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace lotus.Migrations
 {
     [DbContext(typeof(MLotusContext))]
-    partial class MLotusContextModelSnapshot : ModelSnapshot
+    [Migration("20250130152949_AdicionarRelacionamentoUsuarios")]
+    partial class AdicionarRelacionamentoUsuarios
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,13 +32,6 @@ namespace lotus.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Cliente")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ClienteId")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("DataAgendamento")
                         .HasColumnType("timestamp with time zone");
@@ -62,6 +58,10 @@ namespace lotus.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FuncionarioId");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Agendamentos");
                 });
@@ -215,6 +215,25 @@ namespace lotus.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Lotus.Models.Agendamentos", b =>
+                {
+                    b.HasOne("Lotus.Models.User", "Funcionarios")
+                        .WithMany()
+                        .HasForeignKey("FuncionarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Lotus.Models.User", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Funcionarios");
                 });
 #pragma warning restore 612, 618
         }
