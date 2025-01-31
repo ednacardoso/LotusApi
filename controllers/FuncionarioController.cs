@@ -20,10 +20,21 @@ namespace Lotus.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFuncionarios()
         {
-            
-            var funcionario = await _context.Funcionarios.ToListAsync();
-            return Ok(funcionario);
-        }
+            var funcionarios = await _context.Funcionarios
+                .Select(f => new
+                {
+                    id = f.Id,
+                    nome = f.Nome,
+                    especialidade = f.Especialidade,
+                    Telefone = f.Telefone ?? "Sem telefone",
+                    email = f.Email ?? "Sem email",
+                    apelido = f.Apelido ?? "Sem apelido",
+                })
+                .ToListAsync();
+
+            return Ok(funcionarios);
+        }      
+
 
         [HttpPost]
         public async Task<IActionResult> AddFuncionario([FromBody] Funcionarios novoFuncionario)

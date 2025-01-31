@@ -22,21 +22,35 @@ namespace Lotus.Controllers
             return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
         }
 
+        private string ObterPerfilUsuario()
+        {
+            if (User.IsInRole("Administrador")) return "Administrador";
+            if (User.IsInRole("Funcionario")) return "Funcionario";
+            if (User.IsInRole("Cliente")) return "Cliente";
+            return "Desconhecido";
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAgendas()
         {
-            int clienteId = ObterUsuarioIdAutenticado();
-            bool isAdmin = User.IsInRole("Administrador");
+            int usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
 
-            var agendamentos = isAdmin
-                ? await _context.Agendamentos.Where(a => a.Status == "Ativo").ToListAsync()
-                : await _context.Agendamentos.Where(a => a.ClienteId == clienteId && a.Status == "Ativo").ToListAsync();
+            IQueryable<Agendamentos> query = _context.Agendamentos.Where(a => a.Status == "Ativo");
 
+            if (perfil == "Cliente")
+            {
+                query = query.Where(a => a.ClienteId == usuarioId);
+            }
+            else if (perfil == "Funcionario")
+            {
+                query = query.Where(a => a.FuncionarioId == usuarioId);
+            }
+            // Administrador já tem acesso a todos os agendamentos
+
+            var agendamentos = await query.ToListAsync();
             return Ok(agendamentos);
         }
-
-
 
         [HttpPost]
         public async Task<IActionResult> AddAgendamento([FromBody] Agendamentos novoAgendamento)
@@ -46,22 +60,35 @@ namespace Lotus.Controllers
                 return BadRequest("O objeto enviado está vazio.");
             }
 
-            // Verify if cliente exists
-            var cliente = await _context.Clientes.FindAsync(novoAgendamento.ClienteId);
-            // Verify if funcionario exists
-            var funcionario = await _context.Funcionarios.FindAsync(novoAgendamento.FuncionarioId);
+            int usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
 
+            // Buscar cliente pelo ID
+            var cliente = await _context.Clientes.FindAsync(novoAgendamento.ClienteId);
             if (cliente == null)
             {
-                return BadRequest("Cliente não encontrado no sistema.");
+                return BadRequest("Cliente não encontrado.");
             }
 
+            // Buscar funcionário pelo ID
+            var funcionario = await _context.Funcionarios.FindAsync(novoAgendamento.FuncionarioId);
             if (funcionario == null)
             {
-                return BadRequest("Funcionário não encontrado no sistema.");
+                return BadRequest("Funcionário não encontrado.");
             }
 
-            // If both exist, proceed with creating the appointment
+            // Regras de negócio conforme o perfil do usuário
+            if (perfil == "Cliente" && novoAgendamento.ClienteId != usuarioId)
+            {
+                return Forbid("Clientes só podem agendar para si mesmos.");
+            }
+
+            if (perfil == "Funcionario" && novoAgendamento.FuncionarioId != usuarioId)
+            {
+                return Forbid("Funcionários só podem criar agendamentos para si mesmos.");
+            }
+
+            // Preencher os nomes automaticamente antes de salvar no banco
             novoAgendamento.Cliente = cliente.Nome;
             novoAgendamento.Funcionario = funcionario.Nome;
 
@@ -71,9 +98,6 @@ namespace Lotus.Controllers
             return CreatedAtAction(nameof(GetAgendas), new { id = novoAgendamento.Id }, novoAgendamento);
         }
 
-
-
-
         [HttpPatch("{id}/cancelar")]
         public async Task<IActionResult> CancelarAgendamento(int id, [FromBody] CancelarAgendamentoRequest request)
         {
@@ -82,19 +106,19 @@ namespace Lotus.Controllers
                 return BadRequest("O motivo do cancelamento é obrigatório.");
             }
 
-            var clienteId = ObterUsuarioIdAutenticado();
-            bool isAdmin = User.IsInRole("Administrador");
-            bool isFuncionario = User.IsInRole("Funcionario");
+            var usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
 
             var agendamento = await _context.Agendamentos.FindAsync(id);
-
             if (agendamento == null)
             {
                 return NotFound("Agendamento não encontrado.");
             }
 
             // Regras de cancelamento:
-            if (isAdmin || agendamento.ClienteId == clienteId || (isFuncionario && agendamento.FuncionarioId == clienteId))
+            if (perfil == "Administrador" ||
+                (perfil == "Funcionario" && agendamento.FuncionarioId == usuarioId) ||
+                (perfil == "Cliente" && agendamento.ClienteId == usuarioId))
             {
                 agendamento.Status = "Cancelado";
                 agendamento.MotivoCancelamento = request.Motivo;
@@ -105,7 +129,5 @@ namespace Lotus.Controllers
 
             return Forbid("Você não tem permissão para cancelar este agendamento.");
         }
-
-
     }
 }

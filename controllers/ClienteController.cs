@@ -20,9 +20,18 @@ namespace Lotus.Controllers
         [HttpGet]
         public async Task<IActionResult> GetClientes()
         {
-            var clientes = await _context.Clientes.ToListAsync();
+            var clientes = await _context.Clientes
+               .Select(f => new
+               {
+                   id = f.Id,
+                   nome = f.Nome,
+                   Telefone = f.Telefone ?? "Sem telefone",
+                   email = f.Email ?? "Sem email",
+                   apelido = f.Apelido ?? "Sem apelido",
+               })
+               .ToListAsync();
             return Ok(clientes);
-        }
+        }       
 
         // Método para adicionar um cliente
         [HttpPost]
