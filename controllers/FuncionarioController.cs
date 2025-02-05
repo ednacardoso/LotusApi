@@ -25,7 +25,7 @@ namespace Lotus.Controllers
                 {
                     id = f.Id,
                     nome = f.Nome,
-                    especialidade = f.Especialidade,
+                    especialidade = f.Especialidade ?? "Sem especialidade",
                     Telefone = f.Telefone ?? "Sem telefone",
                     email = f.Email ?? "Sem email",
                     apelido = f.Apelido ?? "Sem apelido",
