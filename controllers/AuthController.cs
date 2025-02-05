@@ -90,9 +90,16 @@ namespace Lotus.Controllers
                 token,
                 expires,
                 refreshToken = refreshToken.Token,
-                user = new { user.Nome, user.Tipo }
+                user = new
+                {
+                    id = user.Id,
+                    nome = user.Nome,
+                    tipo = user.Tipo,
+                    role = user.Tipo // Explicitly including role for frontend
+                }
             });
         }
+
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)

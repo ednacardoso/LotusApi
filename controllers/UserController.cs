@@ -57,6 +57,24 @@ namespace Lotus.Controllers
             return Ok(new { message = "Usuário atualizado com sucesso!" });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateUser(RegistrationRequest request)
+        {
+            var user = new User
+            {
+                Nome = request.Nome,
+                Email = request.Email,
+                SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha),
+                Tipo = request.Tipo
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(user.Id);
+        }
+
+
         // 🔹 DELETAR UM USUÁRIO
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
