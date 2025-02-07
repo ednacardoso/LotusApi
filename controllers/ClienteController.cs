@@ -31,7 +31,22 @@ namespace Lotus.Controllers
                })
                .ToListAsync();
             return Ok(clientes);
-        }       
+        }
+
+        [HttpGet("cliente/{userId}")]
+        public async Task<IActionResult> GetClienteByUserId(int userId)
+        {
+            var cliente = await _context.Clientes
+                .Include(c => c.User) // Inclui os dados do User
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            if (cliente == null)
+            {
+                return NotFound(new { message = "Cliente não encontrado" });
+            }
+
+            return Ok(cliente);
+        }
 
         // Método para adicionar um cliente
         [HttpPost]

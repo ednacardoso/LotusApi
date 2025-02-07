@@ -3,6 +3,7 @@ using System;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace lotus.Migrations
 {
     [DbContext(typeof(MLotusContext))]
-    partial class MLotusContextModelSnapshot : ModelSnapshot
+    [Migration("20250207184858_CorrigirRelacionamentosAgendamentos2")]
+    partial class CorrigirRelacionamentosAgendamentos2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

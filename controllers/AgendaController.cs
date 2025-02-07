@@ -2,6 +2,8 @@
 using Lotus.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Lotus.Controllers
 {
@@ -30,13 +32,16 @@ namespace Lotus.Controllers
             return "Desconhecido";
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAgendas()
+        // 🔹 Rota única para obter agendamentos do usuário
+        [HttpGet("usuario")]
+        public async Task<IActionResult> GetAgendamentosPorUsuario()
         {
             int usuarioId = ObterUsuarioIdAutenticado();
             string perfil = ObterPerfilUsuario();
 
-            IQueryable<Agendamentos> query = _context.Agendamentos.Where(a => a.Status == "Ativo");
+            IQueryable<Agendamentos> query = _context.Agendamentos
+                .Include(a => a.ClienteNavigation)  // Incluindo o cliente
+                .Include(a => a.FuncionarioNavigation);  // Incluindo o funcionário
 
             if (perfil == "Cliente")
             {
@@ -46,7 +51,82 @@ namespace Lotus.Controllers
             {
                 query = query.Where(a => a.FuncionarioId == usuarioId);
             }
-            // Administrador já tem acesso a todos os agendamentos
+
+            var agendamentos = await query
+                .Select(a => new
+                {
+                    a.Id,
+                    a.DataAgendamento,
+                    a.Status,
+                    a.Observacoes,
+                    a.MotivoCancelamento,
+                    ClienteNome = a.ClienteNavigation.Nome,  // Retornando o nome do cliente
+                    FuncionarioNome = a.FuncionarioNavigation.Nome  // Retornando o nome do funcionário
+                })
+                .ToListAsync();
+
+            return Ok(agendamentos);
+        }
+
+
+        [HttpGet("cliente/{clienteId}")]
+        public IActionResult GetAgendamentosPorCliente(int clienteId)
+        {
+            var agendamentos = _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .Where(a => a.ClienteId == clienteId)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.DataAgendamento,
+                    a.Status,
+                    a.Observacoes,
+                    a.MotivoCancelamento,
+                    Cliente = new { Nome = a.ClienteNavigation.Nome },
+                    Funcionario = new { Nome = a.FuncionarioNavigation.Nome }
+                })
+                .ToList();
+
+            return Ok(agendamentos);
+        }
+
+
+        [HttpGet("funcionario/{funcionarioId?}")]
+        public IActionResult GetAgendamentosPorFuncionario(int? funcionarioId)
+        {
+            var query = _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .AsQueryable();
+
+            if (funcionarioId.HasValue)
+            {
+                query = query.Where(a => a.FuncionarioId == funcionarioId.Value);
+            }
+
+            return Ok(query.ToList());
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAgendamentosAtivos()
+        {
+            int usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
+
+            IQueryable<Agendamentos> query = _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .Where(a => a.Status == "Ativo");
+
+            if (perfil == "Cliente")
+            {
+                query = query.Where(a => a.ClienteId == usuarioId);
+            }
+            else if (perfil == "Funcionario")
+            {
+                query = query.Where(a => a.FuncionarioId == usuarioId);
+            }
 
             var agendamentos = await query.ToListAsync();
             return Ok(agendamentos);
@@ -60,42 +140,37 @@ namespace Lotus.Controllers
                 return BadRequest("O objeto enviado está vazio.");
             }
 
-            int usuarioId = ObterUsuarioIdAutenticado();
-            string perfil = ObterPerfilUsuario();
-
-            // Buscar cliente pelo ID
-            var cliente = await _context.Clientes.FindAsync(novoAgendamento.ClienteId);
-            if (cliente == null)
+            // Validação adicional
+            if (!await _context.Clientes.AnyAsync(c => c.Id == novoAgendamento.ClienteId))
             {
                 return BadRequest("Cliente não encontrado.");
             }
 
-            // Buscar funcionário pelo ID
-            var funcionario = await _context.Funcionarios.FindAsync(novoAgendamento.FuncionarioId);
-            if (funcionario == null)
+            if (!await _context.Funcionarios.AnyAsync(f => f.Id == novoAgendamento.FuncionarioId))
             {
                 return BadRequest("Funcionário não encontrado.");
             }
 
-            // Regras de negócio conforme o perfil do usuário
-            if (perfil == "Cliente" && novoAgendamento.ClienteId != usuarioId)
+            var agendamento = new Agendamentos
             {
-                return Forbid("Clientes só podem agendar para si mesmos.");
-            }
+                ClienteId = novoAgendamento.ClienteId,
+                FuncionarioId = novoAgendamento.FuncionarioId,
+                DataAgendamento = novoAgendamento.DataAgendamento,
+                Status = "Ativo",
+                Observacoes = novoAgendamento.Observacoes,
+                MotivoCancelamento = novoAgendamento.MotivoCancelamento
+            };
 
-            if (perfil == "Funcionario" && novoAgendamento.FuncionarioId != usuarioId)
-            {
-                return Forbid("Funcionários só podem criar agendamentos para si mesmos.");
-            }
-
-            // Preencher os nomes automaticamente antes de salvar no banco
-            novoAgendamento.Cliente = cliente.Nome;
-            novoAgendamento.Funcionario = funcionario.Nome;
-
-            await _context.Agendamentos.AddAsync(novoAgendamento);
+            await _context.Agendamentos.AddAsync(agendamento);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAgendas), new { id = novoAgendamento.Id }, novoAgendamento);
+            // Retorna o objeto completo com relações
+            var createdAgendamento = await _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .FirstOrDefaultAsync(a => a.Id == agendamento.Id);
+
+            return CreatedAtAction(nameof(GetAgendamentosAtivos), createdAgendamento);
         }
 
         [HttpPatch("{id}/cancelar")]
@@ -106,16 +181,19 @@ namespace Lotus.Controllers
                 return BadRequest("O motivo do cancelamento é obrigatório.");
             }
 
-            var usuarioId = ObterUsuarioIdAutenticado();
-            string perfil = ObterPerfilUsuario();
+            var agendamento = await _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
-            var agendamento = await _context.Agendamentos.FindAsync(id);
             if (agendamento == null)
             {
                 return NotFound("Agendamento não encontrado.");
             }
 
-            // Regras de cancelamento:
+            var usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
+
             if (perfil == "Administrador" ||
                 (perfil == "Funcionario" && agendamento.FuncionarioId == usuarioId) ||
                 (perfil == "Cliente" && agendamento.ClienteId == usuarioId))
@@ -124,7 +202,7 @@ namespace Lotus.Controllers
                 agendamento.MotivoCancelamento = request.Motivo;
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Agendamento cancelado com sucesso." });
+                return Ok(agendamento);
             }
 
             return Forbid("Você não tem permissão para cancelar este agendamento.");

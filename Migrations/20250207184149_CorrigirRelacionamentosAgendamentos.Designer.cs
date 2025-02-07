@@ -3,6 +3,7 @@ using System;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace lotus.Migrations
 {
     [DbContext(typeof(MLotusContext))]
-    partial class MLotusContextModelSnapshot : ModelSnapshot
+    [Migration("20250207184149_CorrigirRelacionamentosAgendamentos")]
+    partial class CorrigirRelacionamentosAgendamentos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -216,15 +219,15 @@ namespace lotus.Migrations
             modelBuilder.Entity("Lotus.Models.Agendamentos", b =>
                 {
                     b.HasOne("Lotus.Models.Cliente", "ClienteNavigation")
-                        .WithMany("Agendamentos")
+                        .WithMany()
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Lotus.Models.Funcionarios", "FuncionarioNavigation")
-                        .WithMany("Agendamentos")
+                        .WithMany()
                         .HasForeignKey("FuncionarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ClienteNavigation");
@@ -252,16 +255,6 @@ namespace lotus.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Lotus.Models.Cliente", b =>
-                {
-                    b.Navigation("Agendamentos");
-                });
-
-            modelBuilder.Entity("Lotus.Models.Funcionarios", b =>
-                {
-                    b.Navigation("Agendamentos");
                 });
 #pragma warning restore 612, 618
         }

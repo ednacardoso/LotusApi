@@ -3,6 +3,7 @@ using System;
 using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace lotus.Migrations
 {
     [DbContext(typeof(MLotusContext))]
-    partial class MLotusContextModelSnapshot : ModelSnapshot
+    [Migration("20250207182934_AjustarRelacionamentoCliente")]
+    partial class AjustarRelacionamentoCliente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,6 +42,9 @@ namespace lotus.Migrations
                     b.Property<int>("FuncionarioId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("FuncionarioNavigationId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("MotivoCancelamento")
                         .HasColumnType("text");
 
@@ -54,7 +60,7 @@ namespace lotus.Migrations
 
                     b.HasIndex("ClienteId");
 
-                    b.HasIndex("FuncionarioId");
+                    b.HasIndex("FuncionarioNavigationId");
 
                     b.ToTable("Agendamentos");
                 });
@@ -216,16 +222,14 @@ namespace lotus.Migrations
             modelBuilder.Entity("Lotus.Models.Agendamentos", b =>
                 {
                     b.HasOne("Lotus.Models.Cliente", "ClienteNavigation")
-                        .WithMany("Agendamentos")
+                        .WithMany()
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Lotus.Models.Funcionarios", "FuncionarioNavigation")
-                        .WithMany("Agendamentos")
-                        .HasForeignKey("FuncionarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("FuncionarioNavigationId");
 
                     b.Navigation("ClienteNavigation");
 
@@ -252,16 +256,6 @@ namespace lotus.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Lotus.Models.Cliente", b =>
-                {
-                    b.Navigation("Agendamentos");
-                });
-
-            modelBuilder.Entity("Lotus.Models.Funcionarios", b =>
-                {
-                    b.Navigation("Agendamentos");
                 });
 #pragma warning restore 612, 618
         }

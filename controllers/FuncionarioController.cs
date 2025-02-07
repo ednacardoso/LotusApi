@@ -33,7 +33,22 @@ namespace Lotus.Controllers
                 .ToListAsync();
 
             return Ok(funcionarios);
-        }      
+        }
+
+        [HttpGet("funcionario/{userId}")]
+        public async Task<IActionResult> GetFuncionarioByUserId(int userId)
+        {
+            var funcionario = await _context.Funcionarios
+                .Include(f => f.User) // Inclui os dados do User
+                .FirstOrDefaultAsync(f => f.UserId == userId);
+
+            if (funcionario == null)
+            {
+                return NotFound(new { message = "Funcionário não encontrado" });
+            }
+
+            return Ok(funcionario);
+        }
 
 
         [HttpPost]

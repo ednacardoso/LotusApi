@@ -92,7 +92,7 @@ namespace Lotus.Controllers
                 refreshToken = refreshToken.Token,
                 user = new
                 {
-                    id = user.Id,
+                    UserId = user.UserId,
                     nome = user.Nome,
                     tipo = user.Tipo,
                     role = user.Tipo // Explicitly including role for frontend
