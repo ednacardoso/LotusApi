@@ -173,6 +173,50 @@ namespace Lotus.Controllers
             return CreatedAtAction(nameof(GetAgendamentosAtivos), createdAgendamento);
         }
 
+        [HttpPut("{id}/alterar")]
+        public async Task<IActionResult> AlterarAgendamento(int id, [FromBody] AlterarAgendamentoRequest request)
+        {
+            var agendamento = await _context.Agendamentos
+                .Include(a => a.ClienteNavigation)
+                .Include(a => a.FuncionarioNavigation)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (agendamento == null)
+            {
+                return NotFound("Agendamento não encontrado.");
+            }
+
+            var usuarioId = ObterUsuarioIdAutenticado();
+            string perfil = ObterPerfilUsuario();
+
+            if (!(perfil == "Administrador" ||
+                 (perfil == "Funcionario" && agendamento.FuncionarioId == usuarioId) ||
+                 (perfil == "Cliente" && agendamento.ClienteId == usuarioId)))
+            {
+                return Forbid("Você não tem permissão para alterar este agendamento.");
+            }
+
+            // Atualiza os campos permitidos
+            if (request.DataAgendamento.HasValue)
+                agendamento.DataAgendamento = request.DataAgendamento.Value;
+
+            if (!string.IsNullOrWhiteSpace(request.Observacoes))
+                agendamento.Observacoes = request.Observacoes;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                agendamento.Id,
+                agendamento.DataAgendamento,
+                agendamento.Status,
+                agendamento.Observacoes,
+                ClienteNome = agendamento.ClienteNavigation.Nome,
+                FuncionarioNome = agendamento.FuncionarioNavigation.Nome
+            });
+        }
+
+
         [HttpPatch("{id}/cancelar")]
         public async Task<IActionResult> CancelarAgendamento(int id, [FromBody] CancelarAgendamentoRequest request)
         {

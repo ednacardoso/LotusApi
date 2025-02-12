@@ -17,7 +17,76 @@ namespace Lotus.Controllers
             _context = context;
         }
 
-        // 🔹 LISTAR TODOS OS USUÁRIOS
+        [HttpPost]
+        public async Task<IActionResult> CreateUser(RegistrationRequest request)
+        {
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+            {
+                return BadRequest(new { message = "E-mail já cadastrado." });
+            }
+
+            var user = new User
+            {
+                Nome = request.Nome,
+                Email = request.Email,
+                SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha),
+                Tipo = request.Tipo
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            switch (request.Tipo.ToLower())
+            {
+                case "cliente":
+                    var cliente = new Cliente
+                    {
+                        Nome = request.Nome,
+                        Email = request.Email,
+                        UserId = user.UserId,
+                        Cpf = request.Cpf,
+                        Apelido = request.Apelido,
+                        Telefone = request.Telefone,
+                        DataNascimento = request.DataNascimento
+                    };
+                    _context.Clientes.Add(cliente);
+                    break;
+
+                case "funcionario":
+                    var funcionario = new Funcionarios
+                    {
+                        Nome = request.Nome,
+                        Email = request.Email,
+                        UserId = user.UserId,
+                        Cpf = request.Cpf,
+                        Apelido = request.Apelido,
+                        Telefone = request.Telefone,
+                        Especialidade = request.Especialidade,
+                        DataNascimento = request.DataNascimento
+                    };
+                    _context.Funcionarios.Add(funcionario);
+                    break;
+
+                case "administrador":
+                    var administrador = new Administrador
+                    {
+                        Nome = request.Nome,
+                        Email = request.Email,
+                        UserId = user.UserId,
+                        Cpf = request.Cpf,
+                        Apelido = request.Apelido,
+                        Telefone = request.Telefone,
+                        Especialidade = request.Especialidade,
+                        DataNascimento = request.DataNascimento
+                    };
+                    _context.Administradores.Add(administrador);
+                    break;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { userId = user.UserId, message = "Usuário criado com sucesso." });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
@@ -25,7 +94,6 @@ namespace Lotus.Controllers
             return Ok(users);
         }
 
-        // 🔹 OBTER UM USUÁRIO POR ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
@@ -37,7 +105,6 @@ namespace Lotus.Controllers
             return Ok(user);
         }
 
-        // 🔹 ATUALIZAR DADOS DO USUÁRIO
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] User updatedUser)
         {
@@ -57,25 +124,6 @@ namespace Lotus.Controllers
             return Ok(new { message = "Usuário atualizado com sucesso!" });
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateUser(RegistrationRequest request)
-        {
-            var user = new User
-            {
-                Nome = request.Nome,
-                Email = request.Email,
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha),
-                Tipo = request.Tipo
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok(user.UserId);
-        }
-
-
-        // 🔹 DELETAR UM USUÁRIO
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

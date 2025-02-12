@@ -17,6 +17,9 @@ namespace Lotus.Data
 
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
+        public DbSet<Administrador> Administradores { get; set; }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Relacionamento Cliente - User (Já existente)
