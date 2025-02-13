@@ -45,11 +45,17 @@ namespace Lotus.Controllers
 
             if (perfil == "Cliente")
             {
-                query = query.Where(a => a.ClienteId == usuarioId);
-            }
-            else if (perfil == "Funcionario")
-            {
-                query = query.Where(a => a.FuncionarioId == usuarioId);
+                var clienteExistente = await _context.Clientes
+                    .FirstOrDefaultAsync(c => c.UserId == usuarioId);
+
+                if (clienteExistente == null)
+                {
+                    return NotFound(new
+                    {
+                        code = "CLIENTE_NAO_CADASTRADO",
+                        message = "Cadastro completo do cliente necessário"
+                    });
+                }
             }
 
             var agendamentos = await query

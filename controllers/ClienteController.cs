@@ -48,6 +48,13 @@ namespace Lotus.Controllers
             return Ok(cliente);
         }
 
+        private int ObterUsuarioIdAutenticado()
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id" || c.Type == "sub");
+            return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+        }
+
+
         // Método para adicionar um cliente
         [HttpPost]
         public async Task<IActionResult> AddCliente([FromBody] Cliente novoCliente)
@@ -57,14 +64,24 @@ namespace Lotus.Controllers
                 return BadRequest("Cliente inválido");
             }
 
-            // Lógica para converter a data de nascimento para UTC (se necessário)
+            // Obtém o ID do usuário autenticado
+            int usuarioId = ObterUsuarioIdAutenticado();
+
+            // Verifica se o cliente já possui um usuário vinculado
+            if (usuarioId == 0)
+            {
+                return BadRequest("Usuário não autenticado");
+            }
+
+            novoCliente.UserId = usuarioId;  // 🔹 Agora o usuário está vinculado corretamente
             novoCliente.DataNascimento = novoCliente.DataNascimento?.ToUniversalTime();
 
-            // Adiciona o cliente ao banco de dados
             _context.Clientes.Add(novoCliente);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetClientes), new { id = novoCliente.Id }, novoCliente);
         }
+
+
     }
 }
