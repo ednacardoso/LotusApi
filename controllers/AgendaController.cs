@@ -59,6 +59,8 @@ namespace Lotus.Controllers
             }
 
             var agendamentos = await query
+                .Include(a => a.ClienteNavigation) // Garantindo que a relação Cliente seja carregada
+                .Include(a => a.FuncionarioNavigation) // Garantindo que a relação Funcionário seja carregada
                 .Select(a => new
                 {
                     a.Id,
@@ -66,12 +68,16 @@ namespace Lotus.Controllers
                     a.Status,
                     a.Observacoes,
                     a.MotivoCancelamento,
-                    ClienteNome = a.ClienteNavigation.Nome,  // Retornando o nome do cliente
-                    FuncionarioNome = a.FuncionarioNavigation.Nome  // Retornando o nome do funcionário
+                    a.ClienteId,
+                    ClienteNome = a.ClienteNavigation != null ? a.ClienteNavigation.Nome : "Cliente não informado",
+                    a.FuncionarioId,
+                    FuncionarioNome = a.FuncionarioNavigation != null ? a.FuncionarioNavigation.Nome : "Funcionário não informado"
                 })
                 .ToListAsync();
 
-            return Ok(agendamentos);
+            return Ok(new { values = agendamentos }); // Retornando no formato esperado pelo Flutter
+                                                      
+
         }
 
 
