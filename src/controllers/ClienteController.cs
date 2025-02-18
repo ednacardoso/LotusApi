@@ -1,87 +1,84 @@
 ﻿using Lotus.Models;
-using Lotus.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
-namespace Lotus.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class ClientesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class ClientesController : ControllerBase
+    private readonly IClienteService _clienteService;
+    private readonly ILogger<ClientesController> _logger;
+
+    public ClientesController(IClienteService clienteService, ILogger<ClientesController> logger)
     {
-        private readonly MLotusContext _context;
+        _clienteService = clienteService;
+        _logger = logger;
+    }
 
-        public ClientesController(MLotusContext context)
+    [HttpGet]
+    public async Task<IActionResult> GetClientes()
+    {
+        var clientes = await _clienteService.GetAllClientes();
+        return Ok(clientes);
+    }
+
+    [HttpGet("cliente/{userId}")]
+    public async Task<IActionResult> GetClienteByUserId(int userId)
+    {
+        try
         {
-            _context = context;
-        }
-
-        // Método para obter todos os clientes
-        [HttpGet]
-        public async Task<IActionResult> GetClientes()
-        {
-            var clientes = await _context.Clientes
-               .Select(f => new
-               {
-                   id = f.Id,
-                   nome = f.Nome,
-                   Telefone = f.Telefone ?? "Sem telefone",
-                   email = f.Email ?? "Sem email",
-                   apelido = f.Apelido ?? "Sem apelido",
-               })
-               .ToListAsync();
-            return Ok(clientes);
-        }
-
-        [HttpGet("cliente/{userId}")]
-        public async Task<IActionResult> GetClienteByUserId(int userId)
-        {
-            var cliente = await _context.Clientes
-                .Include(c => c.User) // Inclui os dados do User
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cliente == null)
-            {
-                return NotFound(new { message = "Cliente não encontrado" });
-            }
-
+            var cliente = await _clienteService.GetClienteByUserId(userId);
             return Ok(cliente);
         }
-
-        private int ObterUsuarioIdAutenticado()
+        catch (NotFoundException ex)
         {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id" || c.Type == "sub");
-            return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+            return NotFound(new { message = ex.Message });
         }
+    }
 
-
-        // Método para adicionar um cliente
-        [HttpPost]
-        public async Task<IActionResult> AddCliente([FromBody] Cliente novoCliente)
+    [HttpPost]
+    public async Task<IActionResult> AddCliente([FromBody] Cliente novoCliente)
+    {
+        try
         {
-            if (novoCliente == null)
-            {
-                return BadRequest("Cliente inválido");
-            }
-
-            // Obtém o ID do usuário autenticado
-            int usuarioId = ObterUsuarioIdAutenticado();
-
-            // Verifica se o cliente já possui um usuário vinculado
-            if (usuarioId == 0)
-            {
-                return BadRequest("Usuário não autenticado");
-            }
-
-            novoCliente.UserId = usuarioId;  // 🔹 Agora o usuário está vinculado corretamente
-            novoCliente.DataNascimento = novoCliente.DataNascimento?.ToUniversalTime();
-
-            _context.Clientes.Add(novoCliente);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetClientes), new { id = novoCliente.Id }, novoCliente);
+            var clienteDto = await _clienteService.AddCliente(novoCliente);
+            return CreatedAtAction(nameof(GetClientes), new { id = clienteDto.Id }, clienteDto);
         }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCliente(int id, [FromBody] Cliente clienteAtualizado)
+    {
+        try
+        {
+            var clienteDto = await _clienteService.UpdateCliente(id, clienteAtualizado);
+            return Ok(clienteDto);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCliente(int id)
+    {
+        try
+        {
+            await _clienteService.DeleteCliente(id);
+            return NoContent();
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 }

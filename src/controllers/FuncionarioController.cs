@@ -1,72 +1,52 @@
 ﻿using Lotus.Models;
-using Lotus.Data;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
-namespace Lotus.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class FuncionariosController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class FuncionariosController : ControllerBase
+    private readonly IFuncionarioService _funcionarioService;
+    private readonly ILogger<FuncionariosController> _logger;
+
+    public FuncionariosController(IFuncionarioService funcionarioService, ILogger<FuncionariosController> logger)
     {
-        private readonly MLotusContext _context;
+        _funcionarioService = funcionarioService;
+        _logger = logger;
+    }
 
-        public FuncionariosController(MLotusContext context)
+    [HttpGet]
+    public async Task<IActionResult> GetFuncionarios()
+    {
+        var funcionarios = await _funcionarioService.GetAllFuncionarios();
+        return Ok(funcionarios);
+    }
+
+    [HttpGet("funcionario/{userId}")]
+    public async Task<IActionResult> GetFuncionarioByUserId(int userId)
+    {
+        try
         {
-            _context = context;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetFuncionarios()
-        {
-            var funcionarios = await _context.Funcionarios
-                .Select(f => new
-                {
-                    id = f.Id,
-                    nome = f.Nome,
-                    especialidade = f.Especialidade ?? "Sem especialidade",
-                    Telefone = f.Telefone ?? "Sem telefone",
-                    email = f.Email ?? "Sem email",
-                    apelido = f.Apelido ?? "Sem apelido",
-                })
-                .ToListAsync();
-
-            return Ok(funcionarios);
-        }
-
-        [HttpGet("funcionario/{userId}")]
-        public async Task<IActionResult> GetFuncionarioByUserId(int userId)
-        {
-            var funcionario = await _context.Funcionarios
-                .Include(f => f.User) // Inclui os dados do User
-                .FirstOrDefaultAsync(f => f.UserId == userId);
-
-            if (funcionario == null)
-            {
-                return NotFound(new { message = "Funcionário não encontrado" });
-            }
-
+            var funcionario = await _funcionarioService.GetFuncionarioByUserId(userId);
             return Ok(funcionario);
         }
-
-
-        [HttpPost]
-        public async Task<IActionResult> AddFuncionario([FromBody] Funcionarios novoFuncionario)
+        catch (NotFoundException ex)
         {
-            if (novoFuncionario == null)
-            {
-                return BadRequest("Funcionário inválido");
-            }
+            return NotFound(new { message = ex.Message });
+        }
+    }
 
-            // Lógica para converter a data de nascimento para UTC (se necessário)
-            novoFuncionario.DataNascimento = novoFuncionario.DataNascimento?.ToUniversalTime();
-
-            // Adiciona o cliente ao banco de dados
-            _context.Funcionarios.Add(novoFuncionario);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetFuncionarios), new { id = novoFuncionario.Id }, novoFuncionario);
+    [HttpPost]
+    public async Task<IActionResult> AddFuncionario([FromBody] Funcionarios novoFuncionario)
+    {
+        try
+        {
+            var funcionarioDto = await _funcionarioService.AddFuncionario(novoFuncionario);
+            return CreatedAtAction(nameof(GetFuncionarios), new { id = funcionarioDto.Id }, funcionarioDto);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }
