@@ -1,4 +1,5 @@
 ﻿using Lotus.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -35,6 +36,30 @@ public class FuncionariosController : ControllerBase
             return NotFound(new { message = ex.Message });
         }
     }
+
+    [ApiController]
+    [Route("api/[controller]")]
+    public class FuncionariosController : ControllerBase
+    {
+        // Existing code...
+
+        [Authorize(Roles = "funcionario")]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+                var funcionarioDto = await _funcionarioService.UpdateProfile(userId, request);
+                return Ok(funcionarioDto);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+        }
+    }
+
 
     [HttpPost]
     public async Task<IActionResult> AddFuncionario([FromBody] Funcionarios novoFuncionario)

@@ -1,4 +1,5 @@
 ﻿using Lotus.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -65,6 +66,22 @@ public class ClientesController : ControllerBase
         catch (ValidationException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "cliente")]
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        try
+        {
+            var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+            var clienteDto = await _clienteService.UpdateProfile(userId, request);
+            return Ok(clienteDto);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 

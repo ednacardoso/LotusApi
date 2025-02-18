@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -28,6 +29,35 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new { message = ex.Message });
         }
+    }
+
+    [Authorize(Roles = "administrador")]
+    [HttpPost("create-user")]
+    public async Task<IActionResult> CreateUser([FromBody] RegistrationRequest request)
+    {
+        try
+        {
+            await _authService.Register(request);
+            return Ok(new { message = "Usuário criado com sucesso." });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        await _authService.InitiatePasswordReset(request.Email);
+        return Ok(new { message = "Se o email existir, instruções de recuperação foram enviadas." });
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        await _authService.ResetPassword(request);
+        return Ok(new { message = "Senha alterada com sucesso." });
     }
 
     [AllowAnonymous]
