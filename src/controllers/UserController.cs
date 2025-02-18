@@ -16,6 +16,8 @@ namespace Lotus.Controllers
         {
             _context = context;
         }
+           
+
 
         [HttpPost]
         public async Task<IActionResult> CreateUser(RegistrationRequest request)

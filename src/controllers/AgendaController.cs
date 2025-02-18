@@ -152,15 +152,19 @@ namespace Lotus.Controllers
                 return BadRequest("O objeto enviado está vazio.");
             }
 
+            Console.WriteLine($"Recebido ClienteId: {novoAgendamento.ClienteId}");
+            Console.WriteLine($"Recebido FuncionarioId: {novoAgendamento.FuncionarioId}");
+            Console.WriteLine($"Recebido DataAgendamento: {novoAgendamento.DataAgendamento}");
+
             // Validação adicional
             if (!await _context.Clientes.AnyAsync(c => c.Id == novoAgendamento.ClienteId))
             {
-                return BadRequest("Cliente não encontrado.");
+                return BadRequest($"Cliente não encontrado: {novoAgendamento.ClienteId}");
             }
 
             if (!await _context.Funcionarios.AnyAsync(f => f.Id == novoAgendamento.FuncionarioId))
             {
-                return BadRequest("Funcionário não encontrado.");
+                return BadRequest($"Funcionário não encontrado: {novoAgendamento.FuncionarioId}");
             }
 
             var agendamento = new Agendamentos
@@ -176,7 +180,6 @@ namespace Lotus.Controllers
             await _context.Agendamentos.AddAsync(agendamento);
             await _context.SaveChangesAsync();
 
-            // Retorna o objeto completo com relações
             var createdAgendamento = await _context.Agendamentos
                 .Include(a => a.ClienteNavigation)
                 .Include(a => a.FuncionarioNavigation)
@@ -184,6 +187,7 @@ namespace Lotus.Controllers
 
             return CreatedAtAction(nameof(GetAgendamentosAtivos), createdAgendamento);
         }
+
 
         [HttpPut("{id}/alterar")]
         public async Task<IActionResult> AlterarAgendamento(int id, [FromBody] AlterarAgendamentoRequest request)
