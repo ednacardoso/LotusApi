@@ -1,11 +1,17 @@
 ﻿using System.Text.Json.Serialization;
-using Lotus.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Lotus.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using AutoMapper;
+using FluentValidation.AspNetCore;
+using Lotus.Services;
+using Lotus.Interfaces;
+using Lotus.Models;
+using Lotus.Data;
+using Lotus.Validators;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +24,10 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddEndpointsApiExplorer();
+
+// Add Validation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateProfileRequestValidator>();
 
 // Register Services
 builder.Services.AddAutoMapper(typeof(Program));
@@ -77,7 +87,6 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 
-    // Add JWT Authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme",
@@ -116,13 +125,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-
-app.MapGet("/", context =>
-{
-    context.Response.Redirect("/index.html");
-    return Task.CompletedTask;
-});
-
+app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
