@@ -11,7 +11,9 @@
             public string Tipo { get; set; } = string.Empty;
             public DateTime DataCriacao { get; set; }
             public DateTime? UltimoLogin { get; set; }
-        }
+        public virtual Cliente Cliente { get; set; }
+        public virtual Funcionarios Funcionario { get; set; }
+    }
     }
 
 

@@ -11,5 +11,7 @@
         public DateTime? ResetTokenExpiration { get; set; }
         public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
         public DateTime? UltimoLogin { get; set; }
+        public virtual Cliente Cliente { get; set; }
+        public virtual Funcionarios Funcionario { get; set; }
     }
 }

@@ -13,8 +13,6 @@ using Lotus.Data;
 using Lotus.Validators;
 using FluentValidation;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
@@ -32,8 +30,7 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateProfileRequestValidator>();
 
 // Register Services
-
-IServiceCollection serviceCollection = builder.Services.AddScoped<IClienteService, ClienteService>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IAgendamentoService, AgendamentoService>();
 builder.Services.AddScoped<IFuncionarioService, FuncionarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -47,7 +44,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:50331")
+        policy.WithOrigins("http://localhost:51838")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -111,8 +108,11 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+// Add AutoMapper configuration ANTES de builder.Build()
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
