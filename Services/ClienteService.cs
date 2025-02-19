@@ -1,5 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Lotus.Models;
+using Lotus.Validators;
+using Lotus.Exceptions;
+using Lotus.Data;
+using AutoMapper;
+using Lotus.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+
+
 
 public class ClienteService : IClienteService
 {
@@ -11,6 +21,28 @@ public class ClienteService : IClienteService
         _context = context;
         _mapper = mapper;
     }
+
+    public async Task<ClienteDto> UpdateProfile(int userId, UpdateProfileRequest request)
+    {
+        var cliente = await _context.Clientes
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (cliente == null)
+            throw new NotFoundException("Cliente não encontrado");
+
+        cliente.Nome = request.Nome;
+        cliente.Email = request.Email;
+        cliente.Telefone = request.Telefone;
+        cliente.Apelido = request.Apelido;
+        cliente.DataNascimento = request.DataNascimento;
+
+        await _context.SaveChangesAsync();
+
+        return _mapper.Map<ClienteDto>(cliente);
+    }
+
+
 
     public async Task<IEnumerable<ClienteDto>> GetAllClientes()
     {

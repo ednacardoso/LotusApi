@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
+using Lotus.Interfaces;
+using Lotus.Models.DTOs.Requests;
+using Lotus.Exceptions;
 
 [Route("api/auth")]
 [ApiController]

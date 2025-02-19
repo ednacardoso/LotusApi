@@ -1,6 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Lotus.Models;
+using Lotus.Data;
+using Lotus.Validators;
+using Lotus.Exceptions;
+using AutoMapper;
+using Lotus.Interfaces;
+using Lotus.Models.DTOs.Requests;
+
 
 public class AgendamentoService : IAgendamentoService
 {

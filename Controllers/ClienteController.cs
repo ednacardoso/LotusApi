@@ -1,101 +1,106 @@
 ﻿using Lotus.Models;
+using Lotus.Models.DTOs.Requests;
+using Lotus.Interfaces;
+using Lotus.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
-[ApiController]
-[Route("api/[controller]")]
-public class ClientesController : ControllerBase
+namespace Lotus.Controllers
 {
-    private readonly IClienteService _clienteService;
-    private readonly ILogger<ClientesController> _logger;
-
-    public ClientesController(IClienteService clienteService, ILogger<ClientesController> logger)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ClientesController : ControllerBase
     {
-        _clienteService = clienteService;
-        _logger = logger;
-    }
+        private readonly IClienteService _clienteService;
+        private readonly ILogger<ClientesController> _logger;
 
-    [HttpGet]
-    public async Task<IActionResult> GetClientes()
-    {
-        var clientes = await _clienteService.GetAllClientes();
-        return Ok(clientes);
-    }
+        public ClientesController(IClienteService clienteService, ILogger<ClientesController> logger)
+        {
+            _clienteService = clienteService;
+            _logger = logger;
+        }
 
-    [HttpGet("cliente/{userId}")]
-    public async Task<IActionResult> GetClienteByUserId(int userId)
-    {
-        try
+        [HttpGet]
+        public async Task<IActionResult> GetClientes()
         {
-            var cliente = await _clienteService.GetClienteByUserId(userId);
-            return Ok(cliente);
+            var clientes = await _clienteService.GetAllClientes();
+            return Ok(clientes);
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
 
-    [HttpPost]
-    public async Task<IActionResult> AddCliente([FromBody] Cliente novoCliente)
-    {
-        try
+        [HttpGet("cliente/{userId}")]
+        public async Task<IActionResult> GetClienteByUserId(int userId)
         {
-            var clienteDto = await _clienteService.AddCliente(novoCliente);
-            return CreatedAtAction(nameof(GetClientes), new { id = clienteDto.Id }, clienteDto);
+            try
+            {
+                var cliente = await _clienteService.GetClienteByUserId(userId);
+                return Ok(cliente);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCliente(int id, [FromBody] Cliente clienteAtualizado)
-    {
-        try
+        [HttpPost]
+        public async Task<IActionResult> AddCliente([FromBody] Cliente novoCliente)
         {
-            var clienteDto = await _clienteService.UpdateCliente(id, clienteAtualizado);
-            return Ok(clienteDto);
+            try
+            {
+                var clienteDto = await _clienteService.AddCliente(novoCliente);
+                return CreatedAtAction(nameof(GetClientes), new { id = clienteDto.Id }, clienteDto);
+            }
+            catch (Lotus.Exceptions.ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 
-    [Authorize(Roles = "cliente")]
-    [HttpPut("profile")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
-    {
-        try
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCliente(int id, [FromBody] Cliente clienteAtualizado)
         {
-            var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
-            var clienteDto = await _clienteService.UpdateProfile(userId, request);
-            return Ok(clienteDto);
+            try
+            {
+                var clienteDto = await _clienteService.UpdateCliente(id, clienteAtualizado);
+                return Ok(clienteDto);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Lotus.Exceptions.ValidationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
-        catch (NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCliente(int id)
-    {
-        try
+        [Authorize(Roles = "cliente")]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            await _clienteService.DeleteCliente(id);
-            return NoContent();
+            try
+            {
+                var userId = int.Parse(User.FindFirst("id")?.Value ?? "0");
+                var clienteDto = await _clienteService.UpdateProfile(userId, request);
+                return Ok(clienteDto);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
-        catch (NotFoundException ex)
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCliente(int id)
         {
-            return NotFound(new { message = ex.Message });
+            try
+            {
+                await _clienteService.DeleteCliente(id);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
         }
     }
 }

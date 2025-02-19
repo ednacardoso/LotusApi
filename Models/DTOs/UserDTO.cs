@@ -1,6 +1,9 @@
-﻿public class UserDto
+﻿namespace Lotus.Models.DTOs.Responses
 {
-    public int UserId { get; set; }
-    public string Nome { get; set; }
-    public string Tipo { get; set; }
+    public class UserDto
+    {
+        public int UserId { get; set; }
+        public string Nome { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+    }
 }

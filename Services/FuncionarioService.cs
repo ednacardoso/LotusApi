@@ -1,5 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Lotus.Data;
+using Lotus.Services;
+using Lotus.Interfaces;
+using AutoMapper;
+using Lotus.Exceptions;
+using Microsoft.EntityFrameworkCore;
+
 
 public class FuncionarioService : IFuncionarioService
 {
@@ -37,6 +44,26 @@ public class FuncionarioService : IFuncionarioService
 
         return _mapper.Map<FuncionarioDto>(funcionario);
     }
+
+    public async Task<FuncionarioDto> UpdateProfile(int userId, UpdateProfileRequest request)
+    {
+        var funcionario = await _context.Funcionarios
+            .Include(f => f.User)
+            .FirstOrDefaultAsync(f => f.UserId == userId);
+
+        if (funcionario == null)
+            throw new NotFoundException("Funcionário não encontrado");
+
+        funcionario.Nome = request.Nome;
+        funcionario.Email = request.Email;
+        funcionario.Telefone = request.Telefone;
+        funcionario.DataNascimento = request.DataNascimento;
+
+        await _context.SaveChangesAsync();
+
+        return _mapper.Map<FuncionarioDto>(funcionario);
+    }
+
 
     public async Task<FuncionarioDto> AddFuncionario(Funcionarios funcionario)
     {

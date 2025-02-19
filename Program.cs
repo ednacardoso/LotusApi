@@ -13,6 +13,8 @@ using Lotus.Data;
 using Lotus.Validators;
 using FluentValidation;
 
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
@@ -30,8 +32,8 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<UpdateProfileRequestValidator>();
 
 // Register Services
-builder.Services.AddAutoMapper(typeof(Program));
-builder.Services.AddScoped<IClienteService, ClienteService>();
+
+IServiceCollection serviceCollection = builder.Services.AddScoped<IClienteService, ClienteService>();
 builder.Services.AddScoped<IAgendamentoService, AgendamentoService>();
 builder.Services.AddScoped<IFuncionarioService, FuncionarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

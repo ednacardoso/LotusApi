@@ -2,6 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Lotus.Interfaces;
+using Lotus.Exceptions;
+using Lotus.Models.DTOs.Requests;
+
+
 
 [ApiController]
 [Route("api/[controller]")]
@@ -40,10 +45,11 @@ public class AgendamentosController : ControllerBase
             var result = await _agendamentoService.CreateAgendamento(agendamento);
             return CreatedAtAction(nameof(GetAgendamentosPorUsuario), result);
         }
-        catch (ValidationException ex)
+        catch (Lotus.Exceptions.ValidationException ex)
         {
             return BadRequest(new { message = ex.Message });
         }
+
     }
 
     [HttpPut("{id}/alterar")]
