@@ -1,6 +1,11 @@
-﻿public class ForgotPasswordRequest
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Lotus.Models.DTOs.Requests
 {
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; }
+    public class ForgotPasswordRequest
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+    }
 }

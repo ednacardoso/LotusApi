@@ -1,13 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Lotus.Models;
-using Lotus.Data;
-using Lotus.Validators;
+﻿using Lotus.Data;
 using Lotus.Exceptions;
 using AutoMapper;
 using Lotus.Interfaces;
 using Lotus.Models.DTOs.Requests;
+using Microsoft.EntityFrameworkCore;
 
 
 public class AgendamentoService : IAgendamentoService
@@ -19,6 +15,16 @@ public class AgendamentoService : IAgendamentoService
     {
         _context = context;
         _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<AgendamentoDto>> GetAllAgendamentos()
+    {
+        var agendamentos = await _context.Agendamentos
+            .Include(a => a.ClienteNavigation)
+            .Include(a => a.FuncionarioNavigation)
+            .ToListAsync();
+
+        return _mapper.Map<IEnumerable<AgendamentoDto>>(agendamentos);
     }
 
     public async Task<IEnumerable<AgendamentoDto>> GetAgendamentosByUser(int userId, string userRole)

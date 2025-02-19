@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Lotus.Models;
 
 public class ClienteDto
 {

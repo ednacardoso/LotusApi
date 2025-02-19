@@ -1,4 +1,6 @@
-﻿namespace Lotus.Models.DTOs.Requests
+﻿using System;
+
+namespace Lotus.Models.DTOs.Requests
 {
     public class LoginRequest
     {

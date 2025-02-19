@@ -1,4 +1,7 @@
-﻿using Lotus.Models;
+﻿
+using AutoMapper;
+using Lotus.Models.DTOs;
+using Lotus.Models;
 
 public class AutoMapperProfile : Profile
 {

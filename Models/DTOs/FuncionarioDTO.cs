@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Lotus.Models;
+using System;
 
 public class FuncionarioDto
 {
@@ -6,7 +7,7 @@ public class FuncionarioDto
     public string Nome { get; set; } = string.Empty;
 
     public int UserId { get; set; }
-    public User User { get; set; }
+    public virtual User User { get; set; }
     public string Cpf { get; set; } = string.Empty;
     public string Especialidade { get; set; } = string.Empty;
     public string Apelido { get; set; } = string.Empty;

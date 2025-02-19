@@ -1,4 +1,6 @@
 ﻿using System;
+using Lotus.Models.DTOs;
+
 
 public class AuthResultDto
 {

@@ -8,7 +8,6 @@ using Lotus.Models;
 using Lotus.Interfaces;
 using Lotus.Models.DTOs;
 using Lotus.Exceptions;
-using Microsoft.AspNetCore.Identity.Data;
 using Lotus.Models.DTOs.Requests;
 
 
@@ -23,6 +22,22 @@ namespace Lotus.Services
         {
             _context = context;
             _configuration = configuration;
+        }        
+
+        public async Task<bool> ResetPassword(ResetPasswordRequest request)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.ResetToken == request.Token && u.ResetTokenExpiration > DateTime.UtcNow);
+
+            if (user == null)
+                throw new UnauthorizedException("Token inválido ou expirado");
+
+            user.SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.ResetToken = null;
+            user.ResetTokenExpiration = null;
+
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<AuthResultDto> Login(LoginRequest request)
@@ -30,7 +45,7 @@ namespace Lotus.Services
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.SenhaHash))
-                throw new UnauthorizedException("Usuário ou senha incorretos");
+                throw new UnauthorizedException("Email ou senha inválidos");
 
             var (token, expires) = GenerateJwtToken(user);
             var refreshToken = GenerateRefreshToken(user.Email);
@@ -46,10 +61,12 @@ namespace Lotus.Services
                 {
                     UserId = user.UserId,
                     Nome = user.Nome,
+                    Email = user.Email,
                     Tipo = user.Tipo
                 }
             };
         }
+
 
         public async Task<AuthResultDto> RefreshToken(string token)
         {
@@ -123,6 +140,29 @@ namespace Lotus.Services
 
             return (new JwtSecurityTokenHandler().WriteToken(token), expiration);
         }
+
+        public async Task<bool> InitiatePasswordReset(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+                throw new NotFoundException("Usuário não encontrado");
+
+            // Generate reset token
+            var resetToken = Guid.NewGuid().ToString();
+
+            // Save reset token and expiration
+            user.ResetToken = resetToken;
+            user.ResetTokenExpiration = DateTime.UtcNow.AddHours(24);
+
+            await _context.SaveChangesAsync();
+
+            // TODO: Send email with reset instructions
+            // await _emailService.SendPasswordResetEmail(email, resetToken);
+
+            return true;
+        }
+
 
         private static RefreshToken GenerateRefreshToken(string userEmail)
         {
