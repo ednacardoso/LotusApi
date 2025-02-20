@@ -6,6 +6,8 @@ public class Funcionarios
     public string Nome { get; set; } = string.Empty;
     public int UserId { get; set; }
     public virtual User User { get; set; }
+    public string Cpf { get; set; } = string.Empty;
+
     public string Especialidade { get; set; } = string.Empty;
     public string? Apelido { get; set; }
     public string Email { get; set; } = string.Empty;

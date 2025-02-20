@@ -8,6 +8,8 @@ namespace Lotus.Interfaces
         Task<AuthResultDto> RefreshToken(string token);
         Task<bool> Register(RegistrationRequest request);
         Task<bool> InitiatePasswordReset(string email);
-        Task<bool> ResetPassword(ResetPasswordRequest request);
+        Task<bool> ResetPassword(ResetPasswordRequest request);       
+        Task RegisterCliente(RegistrationRequest request);
+        Task RegisterFuncionario(RegistrationRequest request);
     }
 }

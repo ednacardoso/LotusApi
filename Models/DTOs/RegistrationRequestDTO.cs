@@ -9,5 +9,6 @@ namespace Lotus.Models.DTOs.Requests
         public string Password { get; set; } = string.Empty;
         public string ConfirmPassword { get; set; } = string.Empty;
         public string Tipo { get; set; } = string.Empty;
+        public string Cpf { get; set; } = string.Empty;
     }
 }

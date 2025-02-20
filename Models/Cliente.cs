@@ -8,6 +8,7 @@ public class Cliente
     public virtual User User { get; set; }
     public string Cpf { get; set; } = string.Empty;
     public string? Apelido { get; set; }
+   
     public string Email { get; set; } = string.Empty;
     public string Telefone { get; set; } = string.Empty;
     public DateTime DataCadastro { get; set; } = DateTime.UtcNow;

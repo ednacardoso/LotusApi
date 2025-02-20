@@ -10,7 +10,6 @@ using Lotus.Models.DTOs;
 using Lotus.Exceptions;
 using Lotus.Models.DTOs.Requests;
 
-
 namespace Lotus.Services
 {
     public class AuthService : IAuthService
@@ -22,7 +21,7 @@ namespace Lotus.Services
         {
             _context = context;
             _configuration = configuration;
-        }        
+        }
 
         public async Task<bool> ResetPassword(ResetPasswordRequest request)
         {
@@ -67,7 +66,6 @@ namespace Lotus.Services
             };
         }
 
-
         public async Task<AuthResultDto> RefreshToken(string token)
         {
             var storedToken = await _context.RefreshTokens
@@ -102,19 +100,95 @@ namespace Lotus.Services
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
                 throw new ValidationException("E-mail já cadastrado");
 
-            var user = new User
+            // Chama o método apropriado com base no tipo de usuário
+            if (request.Tipo == "cliente")
             {
-                Nome = request.Nome,
-                Email = request.Email,
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Tipo = request.Tipo
-            };
-
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
+                await RegisterCliente(request);
+            }
+            else if (request.Tipo == "funcionario")
+            {
+                await RegisterFuncionario(request);
+            }
+            else
+            {
+                throw new ValidationException("Tipo de usuário inválido");
+            }
 
             return true;
         }
+
+        public async Task RegisterCliente(RegistrationRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = new User
+                {
+                    Nome = request.Nome,
+                    Email = request.Email,
+                    SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Tipo = "cliente"
+                };
+
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+
+                var cliente = new Cliente
+                {
+                    Nome = request.Nome,
+                    Email = request.Email,
+                    UserId = user.UserId
+                };
+
+                await _context.Clientes.AddAsync(cliente);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+
+        public async Task RegisterFuncionario(RegistrationRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = new User
+                {
+                    Nome = request.Nome,
+                    Email = request.Email,
+                    SenhaHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Tipo = "funcionario"
+                };
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+
+                var funcionario = new Funcionarios
+                {
+                    Nome = request.Nome,
+                    Email = request.Email,
+                    UserId = user.UserId,
+                    Cpf = request.Cpf  // Add this line
+                };
+                await _context.Funcionarios.AddAsync(funcionario);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
 
         private (string token, DateTime expires) GenerateJwtToken(User user)
         {
@@ -162,7 +236,6 @@ namespace Lotus.Services
 
             return true;
         }
-
 
         private static RefreshToken GenerateRefreshToken(string userEmail)
         {
